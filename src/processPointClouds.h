@@ -22,57 +22,58 @@
 //#include "3DSegmentation/RANSACSegmentation.h"
 //#include "3DClustering/clustering.h"
 
+template<typename PointT>
+float getValueByDepth (int depth, PointT point)
+{
+	if (depth % 3 == 0 )
+      	{ return point.x; }
+	if ( (depth-1) % 3 == 0)
+      	{ return point.y; }
+	return point.z;
+}
+
+template<typename PointT>
 struct Node
 {
-	std::vector<float> point;
+	PointT point;
 	int id;
 	Node* left;
 	Node* right;
 
-	Node(std::vector<float> arr, int setId)
+	Node(PointT arr, int setId)
 	:	point(arr), id(setId), left(NULL), right(NULL)
 	{}
+
 };
 
+template<typename PointT>
 struct KdTree3D
 {
-	Node* root;
+	Node<PointT>* root;
 
 	KdTree3D()
 	: root(NULL)
 	{}
 
-  template<typename PointT>
 	void setInputCloud(typename pcl::PointCloud<PointT>::Ptr cloud)
 	{
-		for (int i=0;i<cloud->points.size();++i)
-	  {
-			std::vector<float> p;
-			p.push_back(cloud->points[i].x);
-			p.push_back(cloud->points[i].y);
-			p.push_back(cloud->points[i].z);
-			insert(p,i);
-		}
+	  for (int i=0;i<cloud->points.size();++i)
+	  	{insert(cloud->points[i],i);}
 	}
 
-	void insert(std::vector<float> point, int id)
+	void insert(PointT point, int id)
 	{
       insert_helper(root,point,id,0);
 	}
   
-  void insert_helper(Node *&node, std::vector<float> point, int id, int depth)
+  void insert_helper(Node<PointT> *&node, PointT point, int id, int depth)
    {
-      int index = 1;
-      if ( depth % 2 == 0)
-      { index=0; }
-      if (depth % 3 == 0 )
-      { index=2; }
       
       if(node == NULL)
       {
-        node = new Node(point,id);
+        node = new Node<PointT>(point,id);
       }
-      else if ( point[index] < node->point[index])
+      else if ( getValueByDepth(depth,point) < getValueByDepth(depth,node->point))
       	{
         	insert_helper(node->left, point,id,depth+1);
       	} 
@@ -82,24 +83,19 @@ struct KdTree3D
       }
    }
 
-  void search_helper(std::vector<float> target,Node* node,float distanceTol, std::vector<int>& ids,int depth)
+  void search_helper(PointT target,Node<PointT>* node,float distanceTol, std::vector<int>& ids,int depth)
 	{
-	  int index = 1;
-      if ( depth % 2 == 0)
-      { index=0; }
-      if (depth % 3 == 0 )
-      { index=2; }
-    
+
 		if ( node==NULL)
 		{
 			return;
 		}
-		float x1=node->point[0];
-		float x2=target[0];
-		float y1=node->point[1];
-		float y2=target[1];
-    	float z1=node->point[2];
-    	float z2=target[2];
+		float x1=node->point.x;
+		float x2=target.x;
+		float y1=node->point.y;
+		float y2=target.y;
+    	float z1=node->point.z;
+    	float z2=target.z;
     
 		if((x1+distanceTol>=x2) && (x1-distanceTol<=x2) && (y1+distanceTol>=y2) && (y1-distanceTol<=y2) && (z1+distanceTol>=z2) && (z1-distanceTol<=z2))
 		{
@@ -108,15 +104,15 @@ struct KdTree3D
 			{ids.push_back(node->id);}
 		}
 
-		if(target[index]-distanceTol<node->point[index])
+		if(getValueByDepth(depth,target)-distanceTol<getValueByDepth(depth,node->point))
 		{search_helper(target,node->left,distanceTol,ids,depth+1);}
 
-		if(target[index]+distanceTol>node->point[index])
+		if(getValueByDepth(depth,target)+distanceTol>getValueByDepth(depth,node->point))
 		{search_helper(target,node->right,distanceTol,ids,depth+1);}
 	}
 	
   	// return a list of point ids in the tree that are within distance of target
-	std::vector<int> search(std::vector<float> target, float distanceTol)
+	std::vector<int> search(PointT target, float distanceTol)
 	{
 		std::vector<int> ids;
 		search_helper(target,root,distanceTol,ids,0);
@@ -146,11 +142,11 @@ public:
 
     Box BoundingBox(typename pcl::PointCloud<PointT>::Ptr cluster);
 
-    void clusterPointCloudsKdTree(std::vector<pcl::PointIndices>& clusterIndices,typename pcl::PointCloud<PointT>::Ptr cloud, float distanceTol);
+    //void clusterPointCloudsKdTree(std::vector<pcl::PointIndices>& clusterIndices,typename pcl::PointCloud<PointT>::Ptr cloud, float distanceTol);
 
-    void proximity (std::vector<std::pair<std::vector<float>,bool>>& traverseMap,std::vector<int>& cluster, KdTree3D* tree, float distanceTol,int index);
+    void proximity (std::vector<std::pair<PointT,bool>>& traverseMap,pcl::PointIndices& cluster, KdTree3D<PointT>* tree, float distanceTol,int index,int minClusterSize,int maxClusterSize);
 
-    void euclideanCluster3D(std::vector<std::vector<int>>& clusters, const std::vector<std::vector<float>>& points, KdTree3D* tree, float distanceTol);
+    void euclideanCluster3D(std::vector<pcl::PointIndices>& clusters, typename pcl::PointCloud<PointT>::Ptr cloud, float distanceTol,int minClusterSize,int maxClusterSize);
 
     void RansacPlaneSeg (pcl::PointIndices::Ptr inliersOut, typename pcl::PointCloud<PointT>::Ptr cloud, int maxIterations, float distanceTol);
 
