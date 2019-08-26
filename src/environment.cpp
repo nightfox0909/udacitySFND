@@ -45,13 +45,13 @@ void cityBlock(pcl::visualization::PCLVisualizer::Ptr& viewer, ProcessPointCloud
    // pcl::PointCloud<pcl::PointXYZI>::Ptr inputCloud=pointProcessorI->loadPcd("../src/sensors/data/pcd/data_1/0000000000.pcd");
     pcl::PointCloud<pcl::PointXYZI>::Ptr filteredCloud=pointProcessorI->FilterCloud(inputCloud,0.2,Eigen::Vector4f(-10,-5,-10,1),Eigen::Vector4f(20,7,10,1));    //renderPointCloud(viewer,filteredCloud,"filterCloud");
 
-    std::pair<pcl::PointCloud<pcl::PointXYZI>::Ptr,pcl::PointCloud<pcl::PointXYZI>::Ptr> segResult = pointProcessorI->SegmentPlane(filteredCloud,100,0.2);
+    std::pair<pcl::PointCloud<pcl::PointXYZI>::Ptr,pcl::PointCloud<pcl::PointXYZI>::Ptr> segResult = pointProcessorI->SegmentPlane(filteredCloud,100,0.25);
     //renderPointCloud(viewer,segResult.first,"obstaCloud",Color(1,0,0));
-    renderPointCloud(viewer,segResult.second,"freeCloud",Color(1,1,1));
+    renderPointCloud(viewer,segResult.second,"freeCloud",Color(0,1,0));
 
-    std::vector<pcl::PointCloud<pcl::PointXYZI>::Ptr> cloud_clusters = pointProcessorI->Clustering(segResult.first,0.5,10,3000);
+    std::vector<pcl::PointCloud<pcl::PointXYZI>::Ptr> cloud_clusters = pointProcessorI->Clustering(segResult.first,0.4,15,3000);
     int clusterId=0;
-    std::vector<Color> colors = {Color(1,0,0),Color(0,1,0),Color(0,0,1)};
+    std::vector<Color> colors = {Color(0,1,1),Color(1,1,0),Color(0,0,1)};
 
     //for (pcl::PointCloud<pcl::PointXYZ>Ptr cluster : cloud_clusters)
     for (std::vector<pcl::PointCloud<pcl::PointXYZI>::Ptr>::const_iterator cluster=cloud_clusters.begin();cluster!=cloud_clusters.end(); ++cluster)
@@ -60,8 +60,9 @@ void cityBlock(pcl::visualization::PCLVisualizer::Ptr& viewer, ProcessPointCloud
        // pointProcessorI->numPoints(*cluster);
         renderPointCloud(viewer,*cluster,"Obstacle"+std::to_string(clusterId),colors[clusterId%colors.size()]);
         
+        //BoxQ box=pointProcessorI->BoundingBoxQ(*cluster);
         Box box=pointProcessorI->BoundingBox(*cluster);
-        renderBox(viewer,box,clusterId,colors[clusterId%colors.size()]);
+        renderBox(viewer,box,clusterId,Color(1,0,0));
         ++clusterId;
     }
 

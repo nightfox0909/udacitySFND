@@ -142,7 +142,7 @@ public:
 
     Box BoundingBox(typename pcl::PointCloud<PointT>::Ptr cluster);
 
-    //void clusterPointCloudsKdTree(std::vector<pcl::PointIndices>& clusterIndices,typename pcl::PointCloud<PointT>::Ptr cloud, float distanceTol);
+	BoxQ BoundingBoxQ(typename pcl::PointCloud<PointT>::Ptr cloud);
 
     void proximity (std::vector<std::pair<PointT,bool>>& traverseMap,pcl::PointIndices& cluster, KdTree3D<PointT>* tree, float distanceTol,int index,int minClusterSize,int maxClusterSize);
 
